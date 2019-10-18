@@ -63,6 +63,8 @@ public:
     bool areThereSingleFaces(MyMesh* _mesh);
     bool hasHalfEdgeAFace(MyMesh* _mesh, int halfEdgeID);
 
+    VectorT <float,6> boundingBox3D(MyMesh* _mesh);
+
 private slots:
 
     void on_pushButton_chargement_clicked();

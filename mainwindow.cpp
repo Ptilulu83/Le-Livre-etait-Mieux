@@ -148,6 +148,22 @@ bool MainWindow::hasHalfEdgeAFace(MyMesh* _mesh, int halfEdgeID)
 
 }
 
+VectorT <float,6> MainWindow::boundingBox3D(MyMesh* _mesh)
+{
+    VectorT <float,6> minmax;
+    for(int i=0;i<3;i++){
+        minmax[i]=_mesh->point(*_mesh->vertices_begin())[i];
+        minmax[i+3]=_mesh->point(*_mesh->vertices_begin())[i];
+    }
+    for (MyMesh::VertexIter curVert = _mesh->vertices_begin(); curVert != _mesh->vertices_end(); curVert++)
+    {
+        for(int i=0;i<3;i++){
+            minmax[i]=std::min(minmax[i], _mesh->point(*curVert)[i]);
+            minmax[i+3]=std::max(minmax[i+3], _mesh->point(*curVert)[i]);
+        }
+    }
+    return minmax;
+}
 
 VectorT <float,3> MainWindow::LongueurArc(MyMesh *_mesh, int vertexID, int vertexID2){
 
@@ -388,6 +404,13 @@ void MainWindow::on_pushButton_chargement_clicked()
 
     qDebug() << "Nombre de faces : " << mesh.n_faces();
     qDebug() << "Nombre de sommets : " << mesh.n_vertices();
+
+    VectorT <float,6> minmax;
+    minmax=boundingBox3D(&mesh);
+
+    qDebug() << "x_min: " << minmax[0] << "x_max: " << minmax[3];
+    qDebug() << "y_min: " << minmax[1] << "y_max: " << minmax[4];
+    qDebug() << "z_min: " << minmax[2] << "z_max: " << minmax[5];
 }
 /* **** fin de la partie boutons et IHM **** */
 
