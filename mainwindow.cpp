@@ -257,6 +257,26 @@ void MainWindow::K_Curv(MyMesh* _mesh)
         _mesh->data(vh).value = value;
     }
 }
+
+void calcul_barycentre(MyMesh* _mesh)
+{
+    float totX = 0.0;
+    float totY = 0.0;
+    float totZ = 0.0;
+    float i = 0;
+    for (MyMesh::VertexIter curVert = _mesh->vertices_begin(); curVert != _mesh->vertices_end(); curVert++)
+    {
+        VertexHandle vh = *curVert;
+        totX += _mesh->point(vh)[0];
+        totY += _mesh->point(vh)[1];
+        totZ += _mesh->point(vh)[2];
+        i++;
+    }
+    totX /= i;
+    totY /= i;
+    totZ /= i;
+}
+
 /* **** fin de la partie à compléter **** */
 
 
@@ -271,6 +291,7 @@ void MainWindow::on_pushButton_H_clicked()
 void MainWindow::on_pushButton_K_clicked()
 {
     K_Curv(&mesh);
+    calcul_barycentre(&mesh);
     displayMesh(&mesh, true); // true permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
 }
 
