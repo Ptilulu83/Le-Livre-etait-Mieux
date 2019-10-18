@@ -108,6 +108,45 @@ VectorT <float,6> MainWindow::VecteurDirecteursTriangle(MyMesh *_mesh, int verte
     return Vec;
 }
 
+bool MainWindow::isFaceTriangle(MyMesh* _mesh, int faceID)
+{
+    FaceHandle fh = _mesh->face_handle (faceID);
+    int count = 0;
+    for (MyMesh::FaceVertexIter curVer = _mesh->fv_iter(fh) ; curVer.is_valid() ; curVer++)
+        count++;
+    return (count==3);
+}
+
+bool MainWindow::isAllFaceTriangle(MyMesh* _mesh)
+{
+    bool isTriangle = true;
+    for (unsigned i = 0 ; i < _mesh->n_faces() && isTriangle ; i++)
+        isTriangle = isFaceTriangle(_mesh, i);
+    return isTriangle;
+}
+
+bool MainWindow::hasFaceNeighboors(MyMesh* _mesh, int faceID)
+{
+    FaceHandle fh = _mesh->face_handle (faceID);
+    int count = 0;
+    for (MyMesh::FaceFaceIter curFace = _mesh->ff_iter(fh) ; curFace.is_valid() && count == 0 ; curFace++)
+        count++;
+    return count>0;
+}
+
+bool MainWindow::areThereSingleFaces(MyMesh* _mesh)
+{
+    bool single = false;
+    for (unsigned i = 0 ; i < _mesh->n_faces() && !single ; i++)
+        single = !hasFaceNeighboors(_mesh, i);
+    return single;
+}
+
+bool MainWindow::hasHalfEdgeAFace(MyMesh* _mesh, int halfEdgeID)
+{
+    HalfedgeHandle heh = _mesh->halfedge_handle(halfEdgeID);
+
+}
 
 
 VectorT <float,3> MainWindow::LongueurArc(MyMesh *_mesh, int vertexID, int vertexID2){
@@ -315,6 +354,19 @@ void MainWindow::on_pushButton_chargement_clicked()
 
     // on affiche le maillage
     displayMesh(&mesh);
+
+    if (isAllFaceTriangle(&mesh))
+        qDebug() << "Toutes les faces sont des triangles";
+    else
+        qDebug() << "Toutes les faces ne sont pas des triangles";
+
+    if (areThereSingleFaces(&mesh))
+        qDebug() << "Il y a au moins une face isolée.";
+    else
+        qDebug() << "Toutes les faces ont un voisin au moins.";
+
+    qDebug() << "Nombre de faces : " << mesh.n_faces();
+    qDebug() << "Nombre de sommets : " << mesh.n_vertices();
 }
 /* **** fin de la partie boutons et IHM **** */
 
