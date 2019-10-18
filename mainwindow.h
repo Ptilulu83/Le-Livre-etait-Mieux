@@ -57,6 +57,12 @@ public:
     void displayMesh(MyMesh *_mesh, bool isTemperatureMap = false, float mapRange = -1);
     void resetAllColorsAndThickness(MyMesh* _mesh);
 
+    bool isFaceTriangle(MyMesh* _mesh, int faceID);
+    bool isAllFaceTriangle(MyMesh* _mesh);
+    bool hasFaceNeighboors(MyMesh* _mesh, int faceID);
+    bool areThereSingleFaces(MyMesh* _mesh);
+    bool hasHalfEdgeAFace(MyMesh* _mesh, int halfEdgeID);
+
 private slots:
 
     void on_pushButton_chargement_clicked();

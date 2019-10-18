@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Prerequisites
 *.d
 
@@ -32,3 +33,6 @@
 *.app
 
 *.pro.user*
+*.pro.user
+Le-Livre-etait-Mieux.pro.user
+*.user
