@@ -314,7 +314,36 @@ void calcul_barycentre(MyMesh* _mesh)
     totX /= i;
     totY /= i;
     totZ /= i;
+
+    qDebug() << "Centre de gravité : (" << totX << ", " << totY << ", " << totZ << ")";
 }
+
+
+Vec3f normale_sommet (MyMesh* _mesh, int vertexID)
+{
+    return OpenMesh::Vec3f (_mesh->normal ( _mesh->vertex_handle(vertexID) ) );
+}
+
+Vec3f normale_face (MyMesh* _mesh, int faceID)
+{
+    return OpenMesh::Vec3f (_mesh->normal ( _mesh->face_handle(faceID) ) );
+}
+
+void afficher_normales_faces_sommets (MyMesh* _mesh)
+{
+    for (unsigned int i = 0; i < _mesh->n_faces() ; i++)
+    {
+        OpenMesh::Vec3f norface = normale_face(_mesh, i);
+        qDebug() << "Normale face " << i << " : (" << norface[0] << ", " << norface[1] << ", " <<  norface[2] << ")";
+    }
+
+    for (unsigned int i = 0; i < _mesh->n_vertices() ; i++)
+    {
+        OpenMesh::Vec3f norvert = normale_sommet(_mesh, i);
+        qDebug() << "Normale sommet " << i << " : (" << norvert[0] << ", " << norvert[1] << ", " <<  norvert[2] << ")";
+    }
+}
+
 
 /* **** fin de la partie à compléter **** */
 
@@ -331,6 +360,7 @@ void MainWindow::on_pushButton_K_clicked()
 {
     K_Curv(&mesh);
     calcul_barycentre(&mesh);
+    afficher_normales_faces_sommets (&mesh);
     displayMesh(&mesh, true); // true permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
 }
 
