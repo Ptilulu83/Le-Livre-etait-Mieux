@@ -108,6 +108,56 @@ VectorT <float,6> MainWindow::VecteurDirecteursTriangle(MyMesh *_mesh, int verte
     return Vec;
 }
 
+VectorT<float,2> MainWindow::minmaxAreaFace (MyMesh* _mesh)
+{
+    VectorT<float,2> minmax;
+    minmax[0] = INT_MAX;
+    minmax[1] = 0;
+    for (int i = 0 ; i < _mesh->n_faces() ; ++i)
+    {
+        float area = faceArea(_mesh,i);
+        if (area < minmax[0])
+            minmax[0] = area;
+        if (area > minmax[1])
+            minmax[1] = area;
+    }
+    return minmax;
+}
+
+void MainWindow::displayFaceAreaFreq (MyMesh* _mesh)
+{
+    VectorT<float,2> minmax = minmaxAreaFace(_mesh);
+
+    qDebug() << "min : " << minmax[0] << " ; max = " << minmax[1];
+
+    VectorT<float,10> pallier;
+    VectorT<int,10> cmpt;
+    for (unsigned i = 0 ; i < 10 ; ++i)
+    {
+        float fac = 0.1f*(i+1);
+        pallier[i] = minmax[0] + (minmax[1]-minmax[0])*fac;
+        cmpt[i] = 0;
+    }
+    for (int i = 0 ; i < _mesh->n_faces() ; ++i)
+    {
+        bool found = false;
+        float area = faceArea(_mesh,i);
+        for (unsigned i = 0 ; i < 9 && !found ; ++i)
+            if (pallier[i] < area  && area <= pallier[i+1])
+            {
+                found = true;
+                cmpt[i+1] ++;
+            }
+        if (!found)
+            cmpt[0]++;
+    }
+
+    qDebug() << "Pallier " << 0 << " : [" << minmax[0] << "," << pallier [0] << "] =" << cmpt[0];
+
+    for (unsigned i = 0 ; i < 9 ; ++i)
+        qDebug() << "Pallier " << i+1 << " : ]" << pallier[i] << "," << pallier [i+1] << "] =" << cmpt[i+1];
+}
+
 bool MainWindow::isFaceTriangle(MyMesh* _mesh, int faceID)
 {
     FaceHandle fh = _mesh->face_handle (faceID);
@@ -441,6 +491,8 @@ void MainWindow::on_pushButton_chargement_clicked()
     qDebug() << "x_min: " << minmax[0] << "x_max: " << minmax[3];
     qDebug() << "y_min: " << minmax[1] << "y_max: " << minmax[4];
     qDebug() << "z_min: " << minmax[2] << "z_max: " << minmax[5];
+
+    displayFaceAreaFreq(&mesh);
 }
 /* **** fin de la partie boutons et IHM **** */
 

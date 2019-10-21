@@ -3,6 +3,7 @@
 
 #include <QFileDialog>
 #include <QMainWindow>
+#include <climits>
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
 
@@ -64,6 +65,8 @@ public:
     bool hasHalfEdgeAFace(MyMesh* _mesh, int halfEdgeID);
 
     VectorT <float,6> boundingBox3D(MyMesh* _mesh);
+    VectorT<float,2>  minmaxAreaFace (MyMesh* _mesh);
+    void displayFaceAreaFreq (MyMesh* _mesh);
 
 private slots:
 
