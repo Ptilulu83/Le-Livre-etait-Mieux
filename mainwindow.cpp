@@ -494,6 +494,33 @@ void valences (MyMesh* _mesh)
 }
 
 
+
+
+float MainWindow::ecart_angulaire_max(MyMesh* _mesh, int vertexID){
+    VertexHandle v_it = _mesh->vertex_handle(vertexID);
+    OpenMesh::Vec3f norvert = normale_sommet(_mesh, vertexID);
+    OpenMesh::Vec3f norface;
+    float maxi=0,temp;
+    for (MyMesh::VertexFaceIter curFace = _mesh->vf_iter(v_it); curFace.is_valid(); curFace ++)
+    {
+           norface= normale_face(_mesh,(*curFace).idx());
+           temp=acos(norface | norvert);
+           maxi= std::max(maxi,temp);
+
+    }
+    return maxi;
+}
+
+
+void MainWindow::Deviation_normales(MyMesh *_mesh){
+    for (MyMesh::VertexIter curVert = _mesh->vertices_begin(); curVert != _mesh->vertices_end(); curVert++)
+    {
+        VertexHandle vh = *curVert;
+        float value = ecart_angulaire_max(_mesh, vh.idx());
+        _mesh->data(vh).value = value;
+    }
+}
+
 /* **** fin de la partie à compléter **** */
 
 
@@ -510,6 +537,12 @@ void MainWindow::on_pushButton_K_clicked()
     K_Curv(&mesh);
     //afficher_normales_faces_sommets (&mesh);
     valences (&mesh);
+    displayMesh(&mesh, true); // true permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
+}
+
+void MainWindow::on_pushButton_D_clicked()
+{
+    Deviation_normales(&mesh);
     displayMesh(&mesh, true); // true permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
 }
 

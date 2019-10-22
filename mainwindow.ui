@@ -73,6 +73,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="pushButton_D">
+         <property name="text">
+          <string>Déviation Normale</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -106,7 +113,7 @@
      <x>0</x>
      <y>0</y>
      <width>632</width>
-     <height>22</height>
+     <height>15</height>
     </rect>
    </property>
   </widget>
