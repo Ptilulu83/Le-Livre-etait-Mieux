@@ -49,11 +49,13 @@ public:
     float angleEE(MyMesh* _mesh, int vertexID, int faceID);
     void H_Curv(MyMesh* _mesh);
     void K_Curv(MyMesh* _mesh);
+    void Deviation_normales(MyMesh* _mesh);
     int PointEnFace(MyMesh *_mesh, int vertexID, int faceID, int faceID2);
     float AireBarycentrique(MyMesh* _mesh, int vertexID);
     float AngleAbs(MyMesh* _mesh, int vertexID);
     float fctK(MyMesh* _mesh, int vertexID);
     float fctH(MyMesh* _mesh, int vertexID);
+    float ecart_angulaire_max(MyMesh* _mesh, int vertexID);
 
     void displayMesh(MyMesh *_mesh, bool isTemperatureMap = false, float mapRange = -1);
     void resetAllColorsAndThickness(MyMesh* _mesh);
@@ -76,6 +78,7 @@ private slots:
     void on_pushButton_angleArea_clicked();
     void on_pushButton_H_clicked();
     void on_pushButton_K_clicked();
+    void on_pushButton_D_clicked();
 
 private:
 
