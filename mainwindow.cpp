@@ -365,6 +365,79 @@ void afficher_normales_faces_sommets (MyMesh* _mesh)
     }
 }
 
+void valences (MyMesh* _mesh)
+{
+    /*int vertices = _mesh->n_vertices();
+    int tab_valences[vertices];
+    for (int i = 0; i < vertices ; i++)
+    {
+        tab_valences[i] = 0;
+    }
+
+    VectorT<int,2> minmax;
+    minmax[0] = INT_MAX;
+    minmax[1] = 0;
+
+    int i = 0;
+    for (MyMesh::VertexIter v_it=_mesh->vertices_sbegin(); v_it!=_mesh->vertices_end(); ++v_it)
+    {
+        // circulate around the current vertex
+        for (MyMesh::VertexVertexIter vv_it=_mesh->vv_iter(*v_it); vv_it.is_valid(); ++vv_it)
+        {
+            // do something with e.g. mesh.point(*vv_it)
+            tab_valences[i]++;
+        }
+
+        if (tab_valences[i] < minmax[0])
+            minmax[0] = tab_valences[i];
+        if (tab_valences[i] > minmax[1])
+            minmax[1] = tab_valences[i];
+
+        i++;
+    }
+
+    for (int i = 0; i < vertices ; i++)
+    {
+        qDebug() << "Valence a " << i << " : " << tab_valences[i];
+    }
+
+    int inter = minmax[1] - minmax[0] +1;
+    int hist_valences[inter];
+    for (int i = 0; i < inter ; i++)
+    {
+        hist_valences[i] = 0;
+    }
+    for (int i = 0; i < vertices ; i++)
+    {
+        hist_valences[tab_valences[i] - minmax[0]]++;
+    }
+    for (int i = 0; i < inter ; i++)
+    {
+        qDebug() << "Hist a " << minmax[0] + i << " : " << hist_valences[i];
+    }*/
+    int hist_valences[50];
+    for (int i = 0; i < 50 ; i++)
+    {
+        hist_valences[i] = 0;
+    }
+
+    for (MyMesh::VertexIter v_it=_mesh->vertices_sbegin(); v_it!=_mesh->vertices_end(); ++v_it)
+    {
+        int n_valence = 0;
+        for (MyMesh::VertexVertexIter vv_it=_mesh->vv_iter(*v_it); vv_it.is_valid(); ++vv_it)
+        {
+            n_valence++;
+        }
+        hist_valences[n_valence]++;
+
+    }
+    for (int i = 0; i < 50 ; i++)
+    {
+        if (hist_valences[i] >= 1)
+            qDebug() << "Hist a " << i << " : " << hist_valences[i];
+    }
+}
+
 
 
 
@@ -407,8 +480,8 @@ void MainWindow::on_pushButton_H_clicked()
 void MainWindow::on_pushButton_K_clicked()
 {
     K_Curv(&mesh);
-    calcul_barycentre(&mesh);
-    afficher_normales_faces_sommets (&mesh);
+    //afficher_normales_faces_sommets (&mesh);
+    valences (&mesh);
     displayMesh(&mesh, true); // true permet de passer en mode "carte de temperatures", avec une gestion automatique de la couleur (voir exemple)
 }
 
@@ -485,6 +558,8 @@ void MainWindow::on_pushButton_chargement_clicked()
     classifyAngleFF(&mesh);
 
     qDebug() << "Aire totale du maillage : " << totFaceArea(&mesh);
+
+    calcul_barycentre(&mesh);
 }
 /* **** fin de la partie boutons et IHM **** */
 
