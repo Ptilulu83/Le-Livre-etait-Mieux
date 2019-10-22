@@ -4,109 +4,201 @@
 
 /* **** début de la partie à compléter **** */
 
+
 float MainWindow::faceArea(MyMesh* _mesh, int faceID)
 {
-    FaceHandle fh = _mesh->face_handle(faceID);
-    std::vector <int> pointID;
-    VectorT <float,3> points[3];
+    FaceHandle fh = _mesh->face_handle ( faceID );
 
-    for (MyMesh::FaceVertexIter curVert = _mesh->fv_iter(fh); curVert.is_valid(); curVert ++)
-    {
-        pointID.push_back((*curVert).idx());
+    std::vector<VertexHandle> vertexes;
+
+    MyMesh::FaceVertexIter fh_v = _mesh->fv_iter(fh);
+    for(; fh_v.is_valid(); ++fh_v)
+        vertexes.push_back ( *fh_v );
+
+    float valuesAB[3];
+    valuesAB[0] = _mesh->point(vertexes[1])[0] - _mesh->point(vertexes[0])[0];
+    valuesAB[1] = _mesh->point(vertexes[1])[1] - _mesh->point(vertexes[0])[1];
+    valuesAB[2] = _mesh->point(vertexes[1])[2] - _mesh->point(vertexes[0])[2];
+
+    float valuesAC[3];
+    valuesAC[0] = _mesh->point(vertexes[2])[0] - _mesh->point(vertexes[0])[0];
+    valuesAC[1] = _mesh->point(vertexes[2])[1] - _mesh->point(vertexes[0])[1];
+    valuesAC[2] = _mesh->point(vertexes[2])[2] - _mesh->point(vertexes[0])[2];
+
+    VectorT<float, 3> vectorAB(valuesAB);
+    VectorT<float, 3> vectorAC(valuesAC);
+
+    VectorT<float, 3> product = vectorAB * vectorAC;
+    float norm = product.norm();
+
+    return norm / 2.0f;
+}
+
+float MainWindow::baryArea(MyMesh* _mesh, int vertID){
+    float baryArea = 0;
+
+    VertexHandle vh = _mesh->vertex_handle ( vertID );
+    MyMesh::VertexFaceIter vf = _mesh->vf_iter ( vh );
+    for ( ; vf.is_valid ( ) ; ++vf ) {
+        FaceHandle current = *vf;
+        baryArea += faceArea ( _mesh , current.idx( ) );
     }
-
-    for (int i=0; i<pointID.size();i++)
-    {
-        VertexHandle vh = _mesh->vertex_handle(pointID.at(i));
-        points[i][0] = _mesh->point(vh)[0];
-        points[i][1] = _mesh->point(vh)[1];
-        points[i][2] = _mesh->point(vh)[2];
-    }
-    VectorT<float,3> BmoinsA = points[1] - points[0];
-    VectorT<float,3> CmoinsA = points[2] - points[0];
-
-    VectorT<float,3> res;
-    res[0] = BmoinsA[1] * CmoinsA[2] - BmoinsA[2] * CmoinsA[1];
-    res[1] = BmoinsA[2] * CmoinsA[0] - BmoinsA[0] * CmoinsA[2];
-    res[2] = BmoinsA[0] * CmoinsA[1] - BmoinsA[1] * CmoinsA[0];
-
-    return res.norm()/2.0;
+    return baryArea / 3.0f;
 }
 
 float MainWindow::angleFF(MyMesh* _mesh, int faceID0,  int faceID1, int vertID0, int vertID1)
 {
-     if(faceID0 == faceID1)
-         return 0.0;
-     if(vertID0 == vertID1)
-         return 0.0;
+    int sign = 0;
 
-     VertexHandle vh0 = _mesh->vertex_handle (vertID0);
-     FaceHandle fh0 = _mesh->face_handle (faceID0);
-     FaceHandle fh1 = _mesh->face_handle (faceID1);
-     int Signe = 0;
+    VertexHandle vh0 = _mesh->vertex_handle ( vertID0 );
+    FaceHandle fh0 = _mesh->face_handle ( faceID0 );
 
-     MyMesh::FaceVertexCWIter fh = _mesh->fv_cwiter (fh0);
+    MyMesh::FaceVertexCWIter fh_cwv = _mesh->fv_cwiter ( fh0 );
+    while ( fh_cwv.is_valid ( ) && *fh_cwv != vh0 ) ++fh_cwv;
 
-     while ( fh.is_valid() && *fh != vh0 )
-         fh++;
-     fh++;
-     VertexHandle Suivant = *fh;
+    VertexHandle next = *++fh_cwv;
 
-     if (Suivant.idx () == vertID1)
-         Signe = -1;
-     else
-         Signe = 1;
+    if ( next.idx ( ) == vertID1 ) sign = -1;
+    else sign = 1;
 
-     OpenMesh::Vec3f normal0 (_mesh->normal(fh0));
-     OpenMesh::Vec3f normal1 (_mesh->normal(fh1));
+    OpenMesh::Vec3f normal0 (_mesh->normal ( fh0 ) );
+    OpenMesh::Vec3f normal1 (_mesh->normal ( _mesh->face_handle ( faceID1 ) ) );
 
-     float scalar = normal0 | normal1;
-     return Signe * acos ( scalar );
+    float scalar = normal0 | normal1;
+
+    return sign * acos ( scalar );
 }
 
-VectorT <float,6> MainWindow::VecteurDirecteursTriangle(MyMesh *_mesh, int vertexID, int faceID){
-    FaceHandle fh = _mesh->face_handle(faceID);
-    std::vector <int> pointID;
-    VectorT <float,3> points[3];
-    int A = -1;
-    int C = -1, B = -1;
 
-     // On donne au point A son ID
-    for (MyMesh::FaceVertexIter curVert = _mesh->fv_iter(fh); curVert.is_valid(); curVert ++)
-    {
-       pointID.push_back((*curVert).idx());
-       if(vertexID == (*curVert).idx())
-           A = pointID.size()-1;
+float MainWindow::angleEE(MyMesh* _mesh, int vertexID,  int faceID)
+{
+    FaceHandle fh = _mesh->face_handle ( faceID );
+    VertexHandle vh = _mesh->vertex_handle ( vertexID );
+    std::vector<VertexHandle> vertexes;
+
+    MyMesh::FaceVertexIter fh_v = _mesh->fv_iter(fh);
+
+    for(; fh_v.is_valid(); ++fh_v) {
+        VertexHandle current = *fh_v;
+        if( current.idx() != vertexID )
+            vertexes.push_back ( current );
     }
 
-    // affectation des points trouvés
-    for (int i=0; i<pointID.size();i++)
-    {
-        VertexHandle vh = _mesh->vertex_handle(pointID.at(i));
-        points[i][0] = _mesh->point(vh)[0];
-        points[i][1] = _mesh->point(vh)[1];
-        points[i][2] = _mesh->point(vh)[2];
-    }
+    float valuesAB[3];
+    valuesAB[0] = _mesh->point(vertexes[0])[0] - _mesh->point(vh)[0];
+    valuesAB[1] = _mesh->point(vertexes[0])[1] - _mesh->point(vh)[1];
+    valuesAB[2] = _mesh->point(vertexes[0])[2] - _mesh->point(vh)[2];
 
-    // On donne aux points B et C leur ID
-    for(int i = 0; i<3 ; i++){
-        if(i != A){
-            if(B == -1)
-                B = i;
-            else if(C == -1)
-                C = i;
+    float valuesAC[3];
+    valuesAC[0] = _mesh->point(vertexes[1])[0] - _mesh->point(vh)[0];
+    valuesAC[1] = _mesh->point(vertexes[1])[1] - _mesh->point(vh)[1];
+    valuesAC[2] = _mesh->point(vertexes[1])[2] - _mesh->point(vh)[2];
+
+    VectorT<float, 3> normalizedAB(VectorT<float, 3>(valuesAB).normalize());
+    VectorT<float, 3> normalizedAC(VectorT<float, 3>(valuesAC).normalize());
+
+    return acos ( normalizedAB | normalizedAC );
+}
+
+
+void MainWindow::H_Curv(MyMesh* _mesh)
+{
+    for (MyMesh::VertexIter curVert = _mesh->vertices_begin(); curVert != _mesh->vertices_end(); curVert++) {
+        MyMesh::VertexHandle current = *curVert;
+        float val = 0.0f;
+
+        for (MyMesh::VertexEdgeIter currentEdge = _mesh->ve_iter ( current ); currentEdge.is_valid(); currentEdge++)
+        {
+            MyMesh::EdgeHandle eh = *currentEdge;
+            MyMesh::HalfedgeHandle heh0 = _mesh->halfedge_handle(eh, 0);
+            MyMesh::HalfedgeHandle heh1 = _mesh->halfedge_handle(eh, 1);
+
+            FaceHandle fh0 = _mesh->face_handle(heh0);
+            FaceHandle fh1 = _mesh->face_handle(heh1);
+
+            // Si l'arête est en bordure, on ne traite qu'une face
+            if ( fh1.idx ( ) > _mesh->n_faces ( ) )
+                fh1 = fh0;
+
+            // Détermine l'autre sommet
+            int vertex2ID = _mesh->to_vertex_handle(heh1).idx();
+            if (vertex2ID == current.idx ( ) )
+                vertex2ID = _mesh->to_vertex_handle(heh0).idx();
+
+            // ||e_ij||
+            //VectorT<float,3> e = _mesh->point(_mesh->vertex_handle(vertex2ID)) - _mesh->point(vh);
+            OpenMesh::Vec3f currentOppVector = _mesh->point ( _mesh->vertex_handle ( vertex2ID ) ) - _mesh->point ( current );
+
+            OpenMesh::Vec3f normal0 ( _mesh->normal ( fh0 ) );
+            OpenMesh::Vec3f normal1 ( _mesh->normal ( fh1 ) );
+
+            if ( ( ( normal0 % normal1 ) | currentOppVector ) < 0 )
+            {
+                FaceHandle tempF = fh0;
+                fh0 = fh1;
+                fh1 = tempF;
+            }
+
+            val += currentOppVector.norm ( ) * angleFF ( _mesh , fh0.idx ( ) , fh1.idx ( ) , current.idx() , vertex2ID );
         }
+        val /= ( 4 * baryArea ( _mesh , current.idx ( ) ) );
+        _mesh->data ( current ).value = val;
     }
-
-    // Calcul des vecteurs AB et AC
-    VectorT <float,3> AB = points[B] - points[A];
-    VectorT <float,3> AC = points[C] - points[A];
-    VectorT <float,6> Vec;
-    Vec[0] = AB[0]; Vec[1] = AB[1]; Vec[2] = AB[2];
-    Vec[3] = AC[0]; Vec[4] = AC[1]; Vec[5] = AC[2];
-
-    return Vec;
 }
+
+void MainWindow::K_Curv(MyMesh* _mesh)
+{
+    for ( MyMesh::VertexIter curVert = _mesh->vertices_begin() ; curVert!=_mesh->vertices_end() ; ++curVert ) {
+        VertexHandle current = *curVert;
+
+        float area = baryArea ( _mesh , current.idx() );
+        float angleEESum = 0;
+
+        MyMesh::VertexFaceIter vf = _mesh->vf_iter ( current );
+        for ( ; vf.is_valid ( ) ; ++vf ) {
+            FaceHandle currentFace = *vf;
+            angleEESum += angleEE ( _mesh , current.idx ( ) , currentFace.idx ( ) );
+        }
+
+        _mesh->data ( current ).value = ( 1 / area ) * ( 2 * M_PI - angleEESum );
+    }
+}
+
+//VectorT<unsigned, 37> MainWindow::classifyAngleFF (MyMesh* _mesh)
+//{
+//    VectorT<unsigned, 37> result;
+//    for (unsigned i = 0 ; i < 37 ; ++i)
+//        result[i] = 0;
+
+//    for (MyMesh::EdgeIter curEdge = _mesh->edges_begin() ; curEdge != _mesh->edges_end() ; ++curEdge)
+//    {
+//        MyMesh::EdgeHandle eh = *curEdge;
+//        MyMesh::HalfedgeHandle heh0 = _mesh->halfedge_handle(eh, 0);
+//        MyMesh::HalfedgeHandle heh1 = _mesh->halfedge_handle(eh, 1);
+
+//        MyMesh::FaceHandle fh0 = _mesh->face_handle(heh0);
+//        MyMesh::FaceHandle fh1 = _mesh->face_handle(heh1);
+
+//        OpenMesh::Vec3f normal0 (_mesh->normal ( fh0 ) );
+//        OpenMesh::Vec3f normal1 (_mesh->normal ( fh1 ) );
+//        double angle = (normal0 | normal1);
+
+//        if (angle > 1)
+//            angle = 1;
+
+//        qDebug() << unsigned((acos(angle)*180/M_PI)/10) << "?";
+//        result[unsigned((acos(angle)*180/M_PI)/10)] ++;
+//        qDebug() << unsigned((acos(angle)*180/M_PI)/10) << "!";
+
+//    }
+
+//    for (unsigned i = 0 ; i < 37 ; ++i)
+//    {
+//        qDebug() << "Angles à " << i*10 << "° :" << result[i];
+//    }
+
+//    return result;
+//}
 
 VectorT<float,2> MainWindow::minmaxAreaFace (MyMesh* _mesh)
 {
@@ -215,153 +307,6 @@ VectorT <float,6> MainWindow::boundingBox3D(MyMesh* _mesh)
     return minmax;
 }
 
-VectorT <float,3> MainWindow::LongueurArc(MyMesh *_mesh, int vertexID, int vertexID2){
-
-    VectorT <float,3> points[2];
-
-    // affectation des points trouvés
-    for (int i=0; i<2;i++)
-    {
-        VertexHandle vh;
-
-        if(i == 0)
-            vh = _mesh->vertex_handle(vertexID);
-        else if(i == 1)
-            vh = _mesh->vertex_handle(vertexID2);
-
-        points[i][0] = _mesh->point(vh)[0];
-        points[i][1] = _mesh->point(vh)[1];
-        points[i][2] = _mesh->point(vh)[2];
-    }
-
-    // Calcul des vecteurs AB et AC
-    VectorT <float,3> AB = points[1] - points[0];
-
-    return AB;
-}
-
-
-float MainWindow::angleEE(MyMesh* _mesh, int vertexID,  int faceID)
-{
-    VectorT <float,6> vec = VecteurDirecteursTriangle(_mesh, vertexID, faceID);
-    VectorT <float,3> AB;
-        AB[0] = vec[0];
-        AB[1] = vec[1];
-        AB[2] = vec[2];
-    VectorT <float,3> AC;
-        AC[0] = vec[3];
-        AC[1] = vec[4];
-        AC[2] = vec[5];
-
-    AireBarycentrique(_mesh, vertexID);
-    return acos(AB.normalized()|AC.normalized());
-}
-
-
-
-float MainWindow::fctH(MyMesh* _mesh, int vertexID){
-
-    float firstPart = 1/(4.0*AireBarycentrique(_mesh, vertexID));
-    float secondPart = 0;
-
-    VertexHandle v_it = _mesh->vertex_handle(vertexID);
-    std::vector<VertexHandle> Vertexs;
-    for(MyMesh::VertexVertexIter  vv_it = mesh.vv_iter(v_it); vv_it; ++vv_it) {
-        VertexHandle vh = *vv_it;
-        Vertexs.push_back(vh);
-    }
-
-   int i = 0;
-   for(i =0; i<Vertexs.size()-1;i++) {
-       FaceHandle fh;
-       FaceHandle fh1;
-
-       bool first = false;
-       for (MyMesh::VertexFaceIter curVert = _mesh->vf_iter(v_it); curVert.is_valid(); curVert ++)
-       {
-           for (MyMesh::VertexFaceIter curVert1 = _mesh->vf_iter(Vertexs.at(i)); curVert1.is_valid(); curVert1 ++)
-           {
-               if((*curVert).idx() == (*curVert1).idx()){
-
-                   if(!first){
-                       fh = curVert;
-                       fh1 = curVert;
-                       first = true;
-                   }
-                   else
-                       fh1 = curVert;
-               }
-           }
-       }
-
-       int vertexEnFace = Vertexs.at(i).idx();
-
-       OpenMesh::Vec3f VecteurDirecteur = _mesh->point (_mesh->vertex_handle ( vertexEnFace ) ) - _mesh->point ( _mesh->vertex_handle(vertexID));
-
-       OpenMesh::Vec3f normal0 ( _mesh->normal ( fh ) );
-       OpenMesh::Vec3f normal1 ( _mesh->normal ( fh1 ) );
-
-       if (((normal0 % normal1) | VecteurDirecteur) < 0)
-       {
-           FaceHandle tmp = fh;
-           fh = fh1;
-           fh1 = tmp;
-       }
-        secondPart += (angleFF(_mesh, fh.idx(), fh1.idx(), vertexID, vertexEnFace) * VecteurDirecteur.norm());
-   }
-    return firstPart * secondPart;
-}
-
-
-void MainWindow::H_Curv(MyMesh* _mesh)
-{
-    for (MyMesh::VertexIter curVert = _mesh->vertices_begin(); curVert != _mesh->vertices_end(); curVert++)
-    {
-        VertexHandle vh = *curVert;
-        float value = fctH(_mesh, vh.idx());
-        _mesh->data(vh).value = value;
-    }
-}
-
-float MainWindow::AireBarycentrique(MyMesh* _mesh, int vertexID){
-    float aireTotal;
-     VertexHandle v_it = _mesh->vertex_handle(vertexID);
-
-     // parcours des faces autour de vertexID
-    for(MyMesh::VertexFaceIter  vf_it = mesh.vf_iter(v_it); vf_it; ++vf_it) {
-        FaceHandle fh = *vf_it;
-        aireTotal += faceArea(_mesh, fh.idx());
-    }
-    return 1/3.0*aireTotal;
-}
-
-float MainWindow::AngleAbs(MyMesh* _mesh, int vertexID){
-    float angleTotal;
-     VertexHandle v_it = _mesh->vertex_handle(vertexID);
-
-    // parcours des faces autour de vertexID
-    for(MyMesh::VertexFaceIter  vf_it = mesh.vf_iter(v_it); vf_it; ++vf_it) {
-        FaceHandle fh = *vf_it;
-        angleTotal += angleEE(_mesh, v_it.idx(), fh.idx());
-    }
-    return angleTotal;
-}
-
-float MainWindow::fctK(MyMesh* _mesh, int vertexID){
-    float firstPart = 1/AireBarycentrique(_mesh, vertexID);
-    float secondPart = 2*M_PI - AngleAbs(_mesh, vertexID);
-    return firstPart * secondPart;
-}
-
-void MainWindow::K_Curv(MyMesh* _mesh)
-{
-    for (MyMesh::VertexIter curVert = _mesh->vertices_begin(); curVert != _mesh->vertices_end(); curVert++)
-    {
-        VertexHandle vh = *curVert;
-        float value = fctK(_mesh, vh.idx());
-        _mesh->data(vh).value = value;
-    }
-}
 
 float MainWindow::totFaceArea(MyMesh* _mesh)
 {
@@ -536,6 +481,8 @@ void MainWindow::on_pushButton_chargement_clicked()
     qDebug() << "z_min: " << minmax[2] << "z_max: " << minmax[5];
 
     displayFaceAreaFreq(&mesh);
+
+    classifyAngleFF(&mesh);
 
     qDebug() << "Aire totale du maillage : " << totFaceArea(&mesh);
 }

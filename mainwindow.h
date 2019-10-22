@@ -40,8 +40,6 @@ public:
     ~MainWindow();
 
     // les fonctions à compléter
-    VectorT <float,6> VecteurDirecteursTriangle(MyMesh *_mesh, int vertexID, int faceID);
-    VectorT <float,3> LongueurArc(MyMesh *_mesh, int vertexID, int vertexID2);
 
 
     float faceArea(MyMesh* _mesh, int faceID);
@@ -49,13 +47,10 @@ public:
     float angleEE(MyMesh* _mesh, int vertexID, int faceID);
     void H_Curv(MyMesh* _mesh);
     void K_Curv(MyMesh* _mesh);
-    void Deviation_normales(MyMesh* _mesh);
-    int PointEnFace(MyMesh *_mesh, int vertexID, int faceID, int faceID2);
-    float AireBarycentrique(MyMesh* _mesh, int vertexID);
-    float AngleAbs(MyMesh* _mesh, int vertexID);
-    float fctK(MyMesh* _mesh, int vertexID);
-    float fctH(MyMesh* _mesh, int vertexID);
+    float baryArea(MyMesh* _mesh, int vertexID);
+
     float ecart_angulaire_max(MyMesh* _mesh, int vertexID);
+    void Deviation_normales(MyMesh* _mesh);
 
     void displayMesh(MyMesh *_mesh, bool isTemperatureMap = false, float mapRange = -1);
     void resetAllColorsAndThickness(MyMesh* _mesh);
@@ -65,6 +60,7 @@ public:
     bool hasFaceNeighboors(MyMesh* _mesh, int faceID);
     bool areThereSingleFaces(MyMesh* _mesh);
     bool hasHalfEdgeAFace(MyMesh* _mesh, int halfEdgeID);
+    VectorT<unsigned, 37> classifyAngleFF (MyMesh* _mesh);
 
     VectorT <float,6> boundingBox3D(MyMesh* _mesh);
     VectorT<float,2>  minmaxAreaFace (MyMesh* _mesh);
