@@ -363,6 +363,16 @@ void MainWindow::K_Curv(MyMesh* _mesh)
     }
 }
 
+float MainWindow::totFaceArea(MyMesh* _mesh)
+{
+    float totFace = 0.0;
+    for (unsigned int i = 0; i < _mesh->n_faces() ; i++)
+    {
+        totFace += faceArea(_mesh, i);
+    }
+    return totFace;
+}
+
 void calcul_barycentre(MyMesh* _mesh)
 {
     float totX = 0.0;
@@ -493,6 +503,8 @@ void MainWindow::on_pushButton_chargement_clicked()
     qDebug() << "z_min: " << minmax[2] << "z_max: " << minmax[5];
 
     displayFaceAreaFreq(&mesh);
+
+    qDebug() << "Aire totale du maillage : " << totFaceArea(&mesh);
 }
 /* **** fin de la partie boutons et IHM **** */
 

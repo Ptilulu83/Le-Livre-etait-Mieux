@@ -68,6 +68,8 @@ public:
     VectorT<float,2>  minmaxAreaFace (MyMesh* _mesh);
     void displayFaceAreaFreq (MyMesh* _mesh);
 
+    float totFaceArea(MyMesh* _mesh);
+
 private slots:
 
     void on_pushButton_chargement_clicked();
