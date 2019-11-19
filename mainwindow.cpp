@@ -164,41 +164,44 @@ void MainWindow::K_Curv(MyMesh* _mesh)
     }
 }
 
-//VectorT<unsigned, 37> MainWindow::classifyAngleFF (MyMesh* _mesh)
-//{
-//    VectorT<unsigned, 37> result;
-//    for (unsigned i = 0 ; i < 37 ; ++i)
-//        result[i] = 0;
+VectorT<unsigned, 37> MainWindow::classifyAngleFF (MyMesh* _mesh)
+{
+    VectorT<unsigned, 37> result;
+    for (unsigned i = 0 ; i < 37 ; ++i)
+        result[i] = 0;
 
-//    for (MyMesh::EdgeIter curEdge = _mesh->edges_begin() ; curEdge != _mesh->edges_end() ; ++curEdge)
-//    {
-//        MyMesh::EdgeHandle eh = *curEdge;
-//        MyMesh::HalfedgeHandle heh0 = _mesh->halfedge_handle(eh, 0);
-//        MyMesh::HalfedgeHandle heh1 = _mesh->halfedge_handle(eh, 1);
+    for (MyMesh::EdgeIter curEdge = _mesh->edges_begin() ; curEdge != _mesh->edges_end() ; ++curEdge)
+    {
+        MyMesh::EdgeHandle eh = *curEdge;
+        MyMesh::HalfedgeHandle heh0 = _mesh->halfedge_handle(eh, 0);
+        MyMesh::HalfedgeHandle heh1 = _mesh->halfedge_handle(eh, 1);
 
-//        MyMesh::FaceHandle fh0 = _mesh->face_handle(heh0);
-//        MyMesh::FaceHandle fh1 = _mesh->face_handle(heh1);
+        MyMesh::FaceHandle fh0 = _mesh->face_handle(heh0);
+        MyMesh::FaceHandle fh1 = _mesh->face_handle(heh1);
 
-//        OpenMesh::Vec3f normal0 (_mesh->normal ( fh0 ) );
-//        OpenMesh::Vec3f normal1 (_mesh->normal ( fh1 ) );
-//        double angle = (normal0 | normal1);
+        if ( fh1.idx ( ) > _mesh->n_faces ( ) )
+            fh1 = fh0;
 
-//        if (angle > 1)
-//            angle = 1;
+        OpenMesh::Vec3f normal0 (_mesh->normal ( fh0 ) );
+        OpenMesh::Vec3f normal1 (_mesh->normal ( fh1 ) );
+        double angle = (normal0 | normal1);
 
-//        qDebug() << unsigned((acos(angle)*180/M_PI)/10) << "?";
-//        result[unsigned((acos(angle)*180/M_PI)/10)] ++;
+        if (angle > 1)
+            angle = 1;
+
+//        qDebug() << ((acos(angle)*180/M_PI)/10) << "?";
+        result[floor((acos(angle)*180/M_PI)/10)] ++;
 //        qDebug() << unsigned((acos(angle)*180/M_PI)/10) << "!";
 
-//    }
+    }
 
-//    for (unsigned i = 0 ; i < 37 ; ++i)
-//    {
-//        qDebug() << "Angles à " << i*10 << "° :" << result[i];
-//    }
+    for (unsigned i = 0 ; i < 37 ; ++i)
+    {
+        qDebug() << "Angles à " << i*10 << "° :" << result[i];
+    }
 
-//    return result;
-//}
+    return result;
+}
 
 VectorT<float,2> MainWindow::minmaxAreaFace (MyMesh* _mesh)
 {
