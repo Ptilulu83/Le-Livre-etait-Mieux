@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<title>RRaffin - Visualisation de Maillages - AMU/LIS 7020</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #808080;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+
+				background-color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 5px;
+			}
+
+			a {
+				color: #0080ff;
+			}
+
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info">Afficheur de maillage 3D</div>
+
+		<script src="js/three.min.js"></script>
+		<script src="js/controls/TrackballControls.js"></script>
+		<script src="js/loaders/PLYLoader.js"></script>
+
+		<script src="js/loaders/ctm/lzma.js"></script>
+		<script src="js/loaders/ctm/ctm.js"></script>
+		<script src="js/loaders/ctm/CTMLoader.js"></script>
+
+		<script>
+
+			//Vérification des possibilités WebGL
+			//if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			class Dijkstra
+			{
+				constructor(nodes = {})
+				{
+					this.nodes = nodes
+					this.tags = {}
+					this.blackList = []
+				}
+
+				addNode(num,neighbors)
+				{
+					this.node[num] = neighbors;
+				}
+
+				path(num1, num2)
+				{
+					var node1 = this.nodes[num1];
+					var node2 = this.nodes[num2];
+					this.tags[node1] = {"w":0, "prev":null} 
+					this._processTags()
+
+					var prev = node2
+					var path = [prev]
+
+					while (prev != node1)
+					{
+						prev = this.tags[prev].prev
+						path.unshift(prev)
+					}
+
+					return path
+				}
+
+				_processTags()
+				{
+					if (this.blackList.length == Object.keys(this.nodes).length) return;
+
+					let smaller = 1000000
+					let smallerTag
+					Object.keys(this.tags).forEach(keyTag =>
+					{
+						if (this.tags[keyTag].w < smaller && !(this.blackList.includes(keyTag)))
+						{
+							smaller = this.tags[keyTag].w
+							smallerTag = keyTag
+						}
+					})
+
+					// tag the childrens of the found tag
+					Object.keys(this.nodes[smallerTag]).forEach(keyNode => 
+					{
+						if(!(this.blackList.includes(keyNode))) // if the child node has been tagged, continue with the next node
+						{
+							var w = this.tags[smallerTag].w + this.nodes[smallerTag][keyNode]
+							var prev = smallerTag
+
+							if (this.tags[keyNode] != null) // if there is a tag for this node, select the tag with the less weight
+							{
+								if (w < this.tags[keyNode].w)
+								{
+									this.tags[keyNode] = {w: w, prev: prev}
+								}
+							}
+							else
+							{
+								this.tags[keyNode] = {w: w, prev: prev}
+							}
+						}
+					})
+
+					this.blackList.push(smallerTag) // check the current node as tagged
+					this._processTags() // process tags again until finishing the process
+				}
+
+				loadMesh(vertices, faces)
+				{
+					var tmp_neighbors;
+					// Ajoute dans node les vertices
+					// Puis les édite en mettant les voisins et leur distance (format :{2:0.3, 3:0.8})
+					// Enfin met les node dans this.node
+
+					for (var i = 0 ; i < vertices.length ; ++i)
+					{
+
+					}
+				}
+
+
+			}
+
+			var container;
+			var camera, scene, renderer;
+			var meshPLY;
+			var mouse = new THREE.Vector2();
+			var raycaster = new THREE.Raycaster();
+			var geometryCustom, meshCustom;
+
+			//theShadowLight;
+			//var mouseX = 0, mouseY = 0;
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+				//Lancement du rendu
+				init();
+				animate();
+
+			function init() 
+			{
+
+				container = document.getElementById( 'container' );
+
+				var canvas = document.createElement( 'canvas' );
+					canvas.width = 128;
+					canvas.height = 128;
+
+				var context = canvas.getContext( '2d' );
+				context.fillRect( 0, 0, canvas.width, canvas.height );
+
+				var lightBox = 10.0;
+
+
+				renderer = new THREE.WebGLRenderer( { antialias: true} );
+					renderer.setClearColor( 0xffffff );
+					renderer.setPixelRatio( window.devicePixelRatio );
+					renderer.setSize( window.innerWidth, window.innerHeight );
+
+									//Caméra
+				camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 10000 );
+					camera.position.z = lightBox;
+					cameraTarget = new THREE.Vector3( 0, 0, 0 );
+
+				//Contrôles
+				controls = new THREE.TrackballControls( camera );
+					controls.rotateSpeed = 5.0;
+					controls.zoomSpeed = 1;
+					controls.panSpeed =1;
+
+					controls.noZoom = false;
+					controls.noPan = false;
+
+					controls.staticMoving = true;
+					controls.dynamicDampingFactor = 0.3;
+
+				//Création de la scène
+				scene = new THREE.Scene();
+
+				//Mise en place d'une lumière ambiente
+				scene.add( new THREE.AmbientLight( 0xffffff ) );
+				var myLightPos = new THREE.Vector3( 0, 0, 0 );
+
+
+					//fichier source du maillage, SUZANNE.PLY, loader ply
+					var sourcePLY = 'data/suzanne.ply'
+					console.log("viewMesh Ply : "+sourcePLY);
+
+					var loaderPLY = new THREE.PLYLoader();
+
+					loaderPLY.load(sourcePLY, function ( geometryPLY ) {
+
+						geometryPLY.computeFaceNormals();
+							geometryPLY.computeVertexNormals();
+							geometryPLY.computeBoundingBox();
+
+						var centrePLY = new THREE.Vector3();
+							centrePLY.x = ( geometryPLY.boundingBox.max.x + geometryPLY.boundingBox.min.x ) / 2.0;
+							centrePLY.y = ( geometryPLY.boundingBox.max.y + geometryPLY.boundingBox.min.y ) / 2.0;
+							centrePLY.z = ( geometryPLY.boundingBox.max.z + geometryPLY.boundingBox.min.z ) / 2.0;
+
+						geometryPLY.computeBoundingSphere();
+
+						var materialPLY = new THREE.MeshLambertMaterial({color: 0x443322 } );
+						materialPLY.wireframe = true;
+
+						meshPLY = new THREE.Mesh( geometryPLY, materialPLY );
+							meshPLY.position.set( -centrePLY.x, -centrePLY.y, -centrePLY.z);
+							meshPLY.castShadow = true;
+							meshPLY.receiveShadow = true;
+
+						myLightPos.x = 1.1*geometryPLY.boundingBox.max.x;
+						myLightPos.y = 1.1*geometryPLY.boundingBox.max.y;
+						myLightPos.z = 1.1*geometryPLY.boundingBox.max.z;
+
+						scene.add( meshPLY );
+
+					});
+
+					//fichier source du maillage, STATUES.CTM, loader ctm
+					/*var sourceCTM = 'data/statues.ctm'
+					console.log("viewMesh CTM : "+sourceCTM);
+
+					var loaderCTM = new THREE.CTMLoader();
+
+					loaderCTM.load(sourceCTM, function ( geometryCTM ) {
+
+						geometryCTM.computeFaceNormals();
+							geometryCTM.computeVertexNormals();
+							geometryCTM.computeBoundingBox();
+
+						var centreCTM = new THREE.Vector3();
+							centreCTM.x = ( geometryCTM.boundingBox.max.x + geometryCTM.boundingBox.min.x ) / 2.0;
+							centreCTM.y = ( geometryCTM.boundingBox.max.y + geometryCTM.boundingBox.min.y ) / 2.0;
+							centreCTM.z = ( geometryCTM.boundingBox.max.z + geometryCTM.boundingBox.min.z ) / 2.0;
+
+						geometryCTM.computeBoundingSphere();
+
+						var materialCTM = new THREE.MeshLambertMaterial({color: 0x443322 } );
+
+						var meshCTM = new THREE.Mesh( geometryCTM, materialCTM );
+							meshCTM.position.set( -centreCTM.x, -centreCTM.y, -centreCTM.z);
+							meshCTM.castShadow = true;
+							meshCTM.receiveShadow = true;
+
+						myLightPos.x = 1.1 * geometryCTM.boundingBox.max.x;
+						myLightPos.y = 1.1 * geometryCTM.boundingBox.max.y;
+						myLightPos.z = 1.1 * geometryCTM.boundingBox.max.z;
+
+						scene.add( meshCTM );
+					});*/
+
+				//une lumière supplémentaire
+				var myLight = new THREE.SpotLight( 0xffffff );
+					myLight.castShadow = false;            // default false
+					myLight.position.set(myLightPos.x, myLightPos.y, myLightPos.z);
+				scene.add( myLight );
+
+				//gestion des ombres
+					renderer.shadowMap.enabled = true;
+					//renderer.shadowMap.cullFace = THREE.CullFaceFront;//deprecated in v89
+					//renderer.shadowMap.renderReverseSided = true; //v89 deprecated in v97
+					renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+
+					//un spotLight pour les ombres
+					var lightShadow = new THREE.SpotLight( 0xffffff );
+					lightShadow.castShadow = true;            // default false
+					scene.add( lightShadow );
+
+					//les paramètres du spotlight des ombres
+					lightShadow.shadow.mapSize.width = 512;  // default (cf doc ThreeJS.org)
+					lightShadow.shadow.mapSize.height = 512; // default
+					lightShadow.shadow.camera.near = 0.5;       // default
+					lightShadow.shadow.camera.far = 500      // default
+					lightShadow.position.set(camera.position.x, camera.position.y, camera.position.z);
+				
+				container.appendChild( renderer.domElement );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+				container.addEventListener( 'click', onMouseClick, false );
+
+				geometryCustom = new THREE.Geometry();
+				var materialCustom = new THREE.MeshBasicMaterial({side:THREE.DoubleSide, color: 0xff0000 } );
+				meshCustom = new THREE.Mesh( geometryCustom, materialCustom );
+				//meshCustom.position.set( -centreCustom.x, -centreCustom.y, -centreCustom.z);
+				meshCustom.castShadow = true;
+				meshCustom.receiveShadow = true;
+
+				scene.add( meshCustom );
+			}
+
+			function onMouseClick( event ) 
+			{
+
+				mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
+				mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
+				raycaster.setFromCamera( mouse, camera );
+
+
+				var intersects = raycaster.intersectObject( meshPLY );
+
+				if ( intersects.length > 0 ) 
+				{
+					
+					var P = intersects[0].point;
+					var P0 = meshCustom.geometry.vertices[meshCustom.geometry.vertices.length-1];
+
+
+
+					console.log("intersection : "+ P.x + " " + P.y + " "+ P.z);
+					meshCustom.geometry.vertices.push(new THREE.Vector3(P.x, P.y, P.z));
+				}
+
+				if ( meshCustom.geometry.vertices.length >= 3 )
+				{
+					//if ( geometryCustom.vertices.length%3 == 0 )
+					//{
+					meshCustom.geometry.faces.push( new THREE.Face3( 0, meshCustom.geometry.vertices.length - 2, meshCustom.geometry.vertices.length - 1 ) );
+					console.log("face : "+ 0 + " " + (meshCustom.geometry.vertices.length - 2) + " "+ (meshCustom.geometry.vertices.length - 1));
+
+					meshCustom.geometry.elementsNeedUpdate = true;
+					//}
+				}
+				
+			}
+
+			function onWindowResize() 
+			{
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			function animate() 
+			{
+				requestAnimationFrame( animate );
+				controls.update();
+
+				render();
+			}
+
+			function render() 
+			{
+				renderer.render( scene, camera );		
+			}
+
+		</script>
+	</body>
+</html>
